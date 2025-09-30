@@ -13,8 +13,11 @@
     "@matter/main": "^0.15.3",
     "@project-chip/matter.js": "^0.15.1",
     "@project-chip/matter.js-tools": "^0.10.7",
+    "@tensorflow/tfjs": "^4.22.0",
+    "@tensorflow/tfjs-vis": "^1.5.1",
     "cors": "^2.8.5",
     "express": "^5.1.0",
+    "openmeteo": "^1.2.0",
     "socket.io": "^4.8.1"
   }
 }
