@@ -2,19 +2,14 @@ import express from "express";
 import http, { get } from "http"
 import { Server } from "socket.io";
 import cors from "cors";
-import { MaybePromise, ServerNode } from "@matter/main";
+import { ServerNode } from "@matter/main";
 import { HeatPumpDevice } from "@matter/main/devices/heat-pump";
 import { Thermostat } from "@matter/main/clusters/thermostat";
-import { ThermostatServer } from "@matter/main/behaviors/thermostat";
+import { HeatPumpThermostatServer } from "./HeatPumpThermostatServer.ts";
 import { fetchWeatherApi } from 'openmeteo';
 import { HeatPumpDeviceLogic } from "./HeatPumpDeviceLogic.ts";
 
-class HeatPumpThermostatServer extends ThermostatServer.with(Thermostat.Feature.Heating) {
 
-    override async setpointRaiseLower(value: number): Promise<void> {
-        console.log("Setpoint Raise Lower called with value:", value);
-    }
-}
 
 const node = await ServerNode.create();
 
