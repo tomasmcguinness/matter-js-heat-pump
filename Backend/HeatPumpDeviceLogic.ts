@@ -1,6 +1,7 @@
-import { Behavior, Node } from "@matter/main";
+import { Behavior, ElectricalMeasurementTag, Node } from "@matter/main";
 import { Thermostat } from "@matter/main/clusters/thermostat";
 import { HeatPumpThermostatServer } from "./HeatPumpThermostatServer.ts";
+import { ElectricalPowerMeasurementServer } from "@matter/main/behaviors/electrical-power-measurement";
 
 export class HeatPumpDeviceLogic extends Behavior {
     static override readonly id = "heatPumpDeviceLogic";
@@ -27,5 +28,13 @@ export class HeatPumpDeviceLogic extends Behavior {
 
     async #handleOccupiedHeatingSetpointChanged(newMode: number, oldMode: number) {
         console.log("Occupied Heating Setpoint changed to:", newMode);
+    }
+
+    async setActivePower(power: number) {
+
+        this.endpoint.setStateOf(ElectricalPowerMeasurementServer, {
+            activePower: power
+        })
+
     }
 }   
