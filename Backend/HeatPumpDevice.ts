@@ -4,6 +4,7 @@ import { Server } from "socket.io";
 import cors from "cors";
 import { ServerNode, Logger } from "@matter/main";
 import { MeasurementType } from "@matter/main/types";
+import { PowerSourceNs } from "@matter/model";
 import { HeatPumpDevice } from "@matter/main/devices/heat-pump";
 import { HeatPumpDeviceLogic } from "./HeatPumpDeviceLogic.ts";
 import { HeatPumpThermostatServer } from "./HeatPumpThermostatServer.ts";
@@ -18,7 +19,7 @@ const logger = Logger.get("ComposedDeviceNode");
 
 const node = new ServerNode({
     id: "heat-pump",
-
+    endpointId: 1,
     productDescription: {},
 
     basicInformation: {
@@ -38,6 +39,9 @@ var heatpumpEndpoint = await node.add(HeatPumpDevice.with(HeatPumpDeviceLogic,
     ElectricalEnergyMeasurementServer,
     DeviceEnergyManagementServer), {
     id: "heat-pump",
+    // heatPump: {
+    //     tagList: [PowerSourceNs.Grid],
+    // },
     powerSource: {
         featureMap: { wired: true },
         status: 1,
