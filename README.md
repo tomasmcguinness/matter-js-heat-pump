@@ -4,6 +4,8 @@ I'm trying to create a Matter Heat Pump to learn more about Matter. This project
 
 This project uses matterjs and uses nextJs for the frontend and nodeJs for the backend.
 
+It leverages my basic ML - https://github.com/tomasmcguinness/ml-python-heatpump-model
+
 ## Running
 To run this, you'll need to start both the backend.
 
@@ -13,9 +15,23 @@ cd Backend
 node HeatPumpDevice.js
 ```
 
-This code is rough around the edges, but should work!
+This code is rough around the edges, but should work and print out something like this:
 
-![alt text](image.png)
+```
+Outdoor temperature is: 12.399999618530273
+Target temperature is: 27.5
+Setting power to: 0
+Outdoor temperature is: 12.399999618530273
+Target temperature is: 27.5
+Setting power to: 0
+Outdoor temperature is: 12.399999618530273
+Target temperature is: 27.5
+Setting power to: 0
+Outdoor temperature is: 12.399999618530273
+Target temperature is: 27.5
+Setting power to: 0
+
+```
 
 I haven't tried it with Bluetooth, so you will need to ensure your devices are on-network when commissioning.
 
