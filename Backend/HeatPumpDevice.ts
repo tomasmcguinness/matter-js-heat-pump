@@ -24,7 +24,7 @@ const node = new ServerNode({
     productDescription: {},
 
     basicInformation: {
-        vendorName: "Acme Corporation",
+        vendorName: "ACME Corporation",
         productName: "Seld-M-Break Heat Pump",
         vendorId: 0xfff1,
         productId: 0x8000,
@@ -170,8 +170,6 @@ server.listen(PORT, () => {
  * ML - Load the linear regression model
  ***/
 
-//const modelParams = require('./model/model_params.json'); // or fetch from API
-
 const data = fs.readFileSync('./model/model_params.json', 'utf8');
 const modelParams = JSON.parse(data);
 
@@ -214,8 +212,6 @@ const weatherData = {
 		temperature_2m: hourly.variables(0)!.valuesArray(),
 	},
 };
-
-console.log(weatherData);
 
 var timer = setInterval(async function () {
 
