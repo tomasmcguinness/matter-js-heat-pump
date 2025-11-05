@@ -14,7 +14,6 @@ import { PowerTopologyServer } from "@matter/main/behaviors/power-topology";
 import { DeviceEnergyManagementServer } from "@matter/main/behaviors/device-energy-management";
 import { ElectricalPowerMeasurementServer } from "@matter/main/behaviors/electrical-power-measurement";
 import { ElectricalEnergyMeasurementServer } from "@matter/main/behaviors/electrical-energy-measurement";
-import { fetchWeatherApi } from 'openmeteo';
 import fs from "fs";
 
 const logger = Logger.get("ComposedDeviceNode");
@@ -22,7 +21,6 @@ const logger = Logger.get("ComposedDeviceNode");
 const node = new ServerNode({
     id: "heat-pump",
     productDescription: {},
-
     basicInformation: {
         vendorName: "ACME Corporation",
         productName: "Seld-M-Break Heat Pump",
@@ -30,7 +28,6 @@ const node = new ServerNode({
         productId: 0x8000,
         serialNumber: "1234-5665-4321",
     },
-
 });
 
 var heatpumpEndpoint = await node.add(HeatPumpDevice.with(HeatPumpDeviceLogic,
@@ -127,6 +124,36 @@ logger.info(node);
 
 await node.start();
 
+var heatingSchedule = [
+    {
+        hour: 0,
+        targetTemperature: 16
+    },
+    {
+        hour: 5,
+        targetTemperature: 21
+    },
+    {
+        hour: 23,
+        targetTemperature: 16
+    },
+];
+
+var hotWaterSchedule = [
+    {
+        hour: 0,
+        on: false
+    },
+    {
+        hour: 4,
+        on: true
+    },
+    {
+        hour: 5,
+        on: false
+    },
+];
+
 const app = express();
 app.use(express.json());
 app.use(cors());
@@ -156,6 +183,18 @@ app.post("/power", async (request, response) => {
     response.status(201).send();
 });
 
+app.get("/outdoortemperatures", async (request, response) => {
+    response.send(temperatureByHour)
+});
+
+app.get("/heatingschedule", async (request, response) => {
+    response.send(heatingSchedule)
+});
+
+app.get("/hotwaterschedule", async (request, response) => {
+    response.send(hotWaterSchedule)
+});
+
 io.on('connection', (socket) => {
     console.log('a user connected');
 });
@@ -182,7 +221,7 @@ function predict(features: any) {
 }
 
 /****
- * Outdoor temperature Forecast
+ * Load the Outdoor temperature Forecast
  ****/
 
 console.log("Fetching weather forecast...");
@@ -192,26 +231,22 @@ const params = {
     "longitude": 1.777652,
     "hourly": "temperature_2m",
     "timezone": "Europe/London",
-    "start_date": "2025-09-30",
-    "end_date": "2025-09-30",
+    "start_date": "2024-11-28",
+    "end_date": "2024-11-28",
 };
-const url = "https://api.open-meteo.com/v1/forecast";
-const responses = await fetchWeatherApi(url, params);
 
-const response = responses[0];
+const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${params.latitude}&longitude=${params.longitude}&timezone=${params.timezone}&hourly=temperature_2m&start_date=${params.start_date}&end_date=${params.end_date}`;
 
-const utcOffsetSeconds = response.utcOffsetSeconds();
+const response = await fetch(url);
 
-const hourly = response.hourly()!;
+const responseData = await response.json();
 
-const weatherData = {
-	hourly: {
-		time: [...Array((Number(hourly.timeEnd()) - Number(hourly.time())) / hourly.interval())].map(
-			(_, i) => new Date((Number(hourly.time()) + i * hourly.interval() + utcOffsetSeconds) * 1000)
-		),
-		temperature_2m: hourly.variables(0)!.valuesArray(),
-	},
-};
+const hourlyData = responseData.hourly;
+
+const temperatureByHour = hourlyData.time.map((t, i) => ({
+  time: t,
+  temperature: hourlyData.temperature_2m[i]
+}));
 
 var timer = setInterval(async function () {
 
@@ -220,11 +255,11 @@ var timer = setInterval(async function () {
     var date = new Date();
     var hour = date.getHours();
 
-    var outdoorTemperature = weatherData.hourly.temperature_2m![hour];
-    console.log("Outdoor temperature is:", outdoorTemperature);
+    var outdoorTemperature = temperatureByHour[hour].temperature;
+    //console.log("Outdoor temperature is:", outdoorTemperature);
 
     var targetTemperature = heatingSetpoint / 100;
-    console.log("Target temperature is:", targetTemperature);
+    //console.log("Target temperature is:", targetTemperature);
 
     if (heatingOn) {
         power = predict([targetTemperature, outdoorTemperature]) * 1000; // mW;
@@ -232,7 +267,7 @@ var timer = setInterval(async function () {
 
     power = Math.floor(power);
 
-    console.log("Setting power to:", power);
+    //console.log("Setting power to:", power);
 
     await heatpumpEndpoint.setStateOf(ElectricalPowerMeasurementServer, {
         activePower: 0,

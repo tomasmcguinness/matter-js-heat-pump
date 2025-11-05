@@ -1,60 +1,41 @@
 'use client';
-
+import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { HourlySchedule } from './hourlySchedule.tsx';
 
 export default function Home() {
 
-  // #region Sample data
-  const data = [
-    {
-      name: 'Page A',
-      uv: 4000,
-      pv: 2400,
-      amt: 2400,
-    },
-    {
-      name: 'Page B',
-      uv: 3000,
-      pv: 1398,
-      amt: 2210,
-    },
-    {
-      name: 'Page C',
-      uv: 2000,
-      pv: 9800,
-      amt: 2290,
-    },
-    {
-      name: 'Page D',
-      uv: 2780,
-      pv: 3908,
-      amt: 2000,
-    },
-    {
-      name: 'Page E',
-      uv: 1890,
-      pv: 4800,
-      amt: 2181,
-    },
-    {
-      name: 'Page F',
-      uv: 2390,
-      pv: 3800,
-      amt: 2500,
-    },
-    {
-      name: 'Page G',
-      uv: 3490,
-      pv: 4300,
-      amt: 2100,
-    },
-  ];
-  // #endregion
+  const [isLoadingOutdoorTemperature, setIsLoadingOutdoorTemperature] = useState(true);
+  const [outdoorTemperatures, setOutdoorTemperatures] = useState<OutdoorTemperature[]>(null);
+
+  const [isLoadingHeatingSchedule, setIsLoadingHeatingSchedule] = useState(true);
+  const [heatingSchedule, setHeatingSchedule] = useState<Transition[]>(null);
+
+  const [isLoadingHotWaterSchedule, setIsLoadingHotWaterSchedule] = useState(true);
+  const [hotWaterSchedule, setHotWaterSchedule] = useState<Transition[]>(null);
+
+  useEffect(() => {
+    fetch('http://localhost:3000/outdoortemperatures').then(r => r.json()).then(data => { 
+      setOutdoorTemperatures(data); 
+      setIsLoadingOutdoorTemperature(false); });
+  }, []);
+
+  useEffect(() => {
+    fetch('http://localhost:3000/heatingschedule').then(r => r.json()).then(data => { 
+      setHeatingSchedule(data); 
+      setIsLoadingHeatingSchedule(false); });
+  }, []);
+
+  useEffect(() => {
+    fetch('http://localhost:3000/hotwaterschedule').then(r => r.json()).then(data => { 
+      setHotWaterSchedule(data); 
+      setIsLoadingHotWaterSchedule(false); });
+  }, []);
 
   var outdoorTemperatureChart = <LineChart
-    style={{ width: '100%', maxWidth: '1200px', height: '100%', maxHeight: '50vh', aspectRatio: 1.618 }}
+    style={{ width: '100%', maxWidth: '1200px', height: '100%', maxHeight: '40vh', aspectRatio: 1.618 }}
     responsive
-    data={data}
+    data={outdoorTemperatures}
     margin={{
       top: 5,
       right: 0,
@@ -63,28 +44,59 @@ export default function Home() {
     }}
   >
     <CartesianGrid strokeDasharray="3 3" />
-    <XAxis dataKey="name" />
+    <XAxis dataKey="time" />
     <YAxis width="auto" />
     <Tooltip />
     <Legend />
-    <Line type="monotone" dataKey="pv" stroke="#8884d8" activeDot={{ r: 8 }} />
-    <Line type="monotone" dataKey="uv" stroke="#82ca9d" />
+    <Line type="monotone" dataKey="temperature" stroke="#8884d8" activeDot={{ r: 8 }} />
   </LineChart>;
+
+  var heatingSlots = [];
+  
+  if(!isLoadingHeatingSchedule) {
+    heatingSlots = heatingSchedule.map(x => x.hour);
+  }
 
   return (
     <div>
-      <h1>Status 30th September 2025</h1>
+      <h1>28th November 2024</h1>
       <hr />
-      <p>
-        <h3>Outdoor Temperature</h3>
-        {outdoorTemperatureChart}
-      </p>
-      <p>
-        Schedule
-      </p>
-      <p>
-        Hot Water
-      </p>
+      <div className="card">
+  <div className="card-header">
+    Status
+  </div>
+  <div className="card-body">
+    <h2 style={{display:'inline'}}><span class="badge bg-primary">Target: 21°C</span></h2>
+    <h2 style={{display:'inline'}}><span class="badge bg-primary">Flow Temperature: 33°C</span></h2>
+    <h2 style={{display:'inline'}}><span class="badge bg-primary">Power: 100W°C</span></h2>
+  </div>
+</div>
+      <div className="card">
+  <div className="card-header">
+    Outdoor Temperature
+  </div>
+  <div className="card-body">
+     {isLoadingOutdoorTemperature === false && <div>{outdoorTemperatureChart}</div>}
+  </div>
+</div>
+
+<div className="card">
+  <div className="card-header">
+    Heating Schedule
+  </div>
+  <div className="card-body">
+      <HourlySchedule transitions={heatingSlots} />
+  </div>
+</div>
+
+<div className="card">
+  <div className="card-header">
+    Hot Water Schedule
+  </div>
+  <div className="card-body">
+      <HourlySchedule transitions={[]} />
+  </div>
+</div>
     </div>
   );
 }
