@@ -54,7 +54,13 @@ export default function Home() {
   var heatingSlots = [];
   
   if(!isLoadingHeatingSchedule) {
-    heatingSlots = heatingSchedule.map(x => x.hour);
+    heatingSlots = heatingSchedule.map((x) =>{ return { hour: x.hour, temperature: x.targetTemperature, show: true }; });
+  }
+
+  var hotWaterSlots = [];
+  
+  if(!isLoadingHotWaterSchedule) {
+    hotWaterSlots = hotWaterSchedule.map((x) =>{ return { hour: x.hour, show: x.on }; });
   }
 
   return (
@@ -94,7 +100,7 @@ export default function Home() {
     Hot Water Schedule
   </div>
   <div className="card-body">
-      <HourlySchedule transitions={[]} />
+      <HourlySchedule transitions={hotWaterSlots} />
   </div>
 </div>
     </div>

@@ -134,7 +134,7 @@ var heatingSchedule = [
         targetTemperature: 21
     },
     {
-        hour: 23,
+        hour: 20,
         targetTemperature: 16
     },
 ];
