@@ -95,11 +95,13 @@ var thermostatEndpoint = await node.add(ThermostatDevice.with(HeatPumpThermostat
     }
 });
 
+var systemMode = 0;
 var heatingOn = false;
 var heatingSetpoint = 2000; // 20.00 °C
 
 thermostatEndpoint.events.thermostat.systemMode$Changed.on(value => {
     console.log(`Thermostat is now ${value ? "ON" : "OFF"}`);
+    systemMode = value;
     heatingOn = value === 4;
 
     if (heatingOn) {
@@ -108,6 +110,8 @@ thermostatEndpoint.events.thermostat.systemMode$Changed.on(value => {
     } else {
         console.log("Heating is OFF. Clearning the forecast...");
     }
+
+    io.emit('systemModeChanged', value);
 });
 
 thermostatEndpoint.events.thermostat.occupiedHeatingSetpoint$Changed.on(value => {
@@ -168,7 +172,8 @@ const io = new Server(server, {
 
 app.get("/status", (request, response) => {
     const status = {
-        "status": "Running"
+        status: "Running",
+        systemMode, 
     };
 
     response.send(status);

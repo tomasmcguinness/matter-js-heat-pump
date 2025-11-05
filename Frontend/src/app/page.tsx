@@ -1,4 +1,6 @@
 'use client';
+
+import { Manager } from 'socket.io-client';
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { HourlySchedule } from './hourlySchedule.tsx';
@@ -13,6 +15,38 @@ export default function Home() {
 
   const [isLoadingHotWaterSchedule, setIsLoadingHotWaterSchedule] = useState(true);
   const [hotWaterSchedule, setHotWaterSchedule] = useState<Transition[]>(null);
+
+  const [systemMode, setSystemMode] = useState<number>(0);
+
+  useEffect(() => {
+
+    const manager = new Manager("http://localhost:3000", {
+      reconnectionDelayMax: 10000,
+    });
+
+    const socket = manager.socket("/");
+
+    manager.open(err => {
+      if (err) {
+        // an error has occurred
+      } else {
+        // the connection was successfully established
+        console.log("Socket connection established");
+      }
+    });
+
+    socket.on("systemModeChanged", (state) => {
+      console.log("systemMode: " + state);
+      setSystemMode(state);
+    });
+
+  }, []);
+
+   useEffect(() => {
+    fetch('http://localhost:3000/status').then(r => r.json()).then(data => { 
+      setSystemMode(data.systemMode); 
+    });
+  }, []);
 
   useEffect(() => {
     fetch('http://localhost:3000/outdoortemperatures').then(r => r.json()).then(data => { 
@@ -63,20 +97,31 @@ export default function Home() {
     hotWaterSlots = hotWaterSchedule.map((x) =>{ return { hour: x.hour, show: x.on }; });
   }
 
+  var systemModeLabel = systemMode == 0 ? <h2 style={{display:'inline'}}><span className="badge bg-danger">OFF</span></h2> : <h2 style={{display:'inline'}}><span className="badge bg-success">HEATING</span></h2>;
+
   return (
     <div>
       <h1>28th November 2024</h1>
       <hr />
+      
       <div className="card">
   <div className="card-header">
     Status
   </div>
   <div className="card-body">
-    <h2 style={{display:'inline'}}><span class="badge bg-primary">Target: 21°C</span></h2>
-    <h2 style={{display:'inline'}}><span class="badge bg-primary">Flow Temperature: 33°C</span></h2>
-    <h2 style={{display:'inline'}}><span class="badge bg-primary">Power: 100W°C</span></h2>
+    {systemModeLabel}
+
+    {systemMode == 4 && <>
+      <h2 style={{display:'inline'}}><span className="badge bg-primary">Target: 21°C</span></h2>
+      <h2 style={{display:'inline'}}><span className="badge bg-primary">Flow Temperature: 33°C</span></h2>
+      <h2 style={{display:'inline'}}><span className="badge bg-primary">Power: 100W°C</span></h2>
+      </>
+    }
   </div>
 </div>
+
+<input type="range" style={{width: '100%', marginBottom: '20px'}} value={0} min={0} max={24} />
+
       <div className="card">
   <div className="card-header">
     Outdoor Temperature
