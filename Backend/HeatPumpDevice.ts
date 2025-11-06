@@ -317,10 +317,10 @@ async function updateSystemToCurrentHour(hour) {
 
     var deltaT = targetTemperature - outdoorTemperature;
 
-    var heatRequired = deltaT * 300;
+    var heatRequired = deltaT * 200;
 
     if(matchingHeatingSchedule.on) {
-        heatRequired = 8000;
+        heatRequired = 5000;
     }
 
     var power: number = 0;

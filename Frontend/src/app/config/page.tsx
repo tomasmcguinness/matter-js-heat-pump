@@ -12,6 +12,16 @@ return (<div>
     Heat Loss
   </div>
   <div className="card-body">
+    <form>
+      <div className="input-group mb-3">
+        <input type="email" className="form-control" id="exampleInputEmail1" aria-describedby="emailHelp"  />
+        <span class="input-group-text" id="basic-addon2">°C</span>
+      </div>
+      <div className="input-group mb-3">
+        <input type="email" className="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" />
+        <span class="input-group-text" id="basic-addon2">kW</span>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -20,6 +30,15 @@ return (<div>
     Weather Compensation
   </div>
   <div className="card-body">
+     <form>
+      <div className="input-group mb-3">
+        <input type="email" className="form-control" id="exampleInputEmail1" aria-describedby="emailHelp"  />
+        <span class="input-group-text" id="basic-addon2">°C</span>
+      </div>
+      <div className="input-group mb-3">
+        <input type="email" className="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" />
+      </div>
+    </form>
   </div>
 </div>
 
