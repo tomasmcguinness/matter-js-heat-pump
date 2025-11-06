@@ -2,9 +2,11 @@
 
 type HourlyScheduleProps = {
     transitions: any[];
+    activeIndex: number,
+    currentHour: number
 };
 
-export const HourlySchedule = ({ transitions }: HourlyScheduleProps) => {
+export const HourlySchedule = ({ transitions, activeIndex, currentHour }: HourlyScheduleProps) => {
 
     if (transitions == null || transitions.length == 0) {
         return <div className="alert alert-info" style={{ marginBottom: '0' }}>No Schedule Data Available</div>;
@@ -24,7 +26,7 @@ export const HourlySchedule = ({ transitions }: HourlyScheduleProps) => {
             style={{
                 visibility: `${visibility}`,
               width: `${widthPercent}%`,
-              backgroundColor: '#4A90E2',
+              backgroundColor: activeIndex === index ? '#4A90E2' : 'grey',
               color: 'white',
               padding: '8px',
               textAlign: 'center',
@@ -37,6 +39,10 @@ export const HourlySchedule = ({ transitions }: HourlyScheduleProps) => {
         );
       })}
 
+        </div>
+        <div className="timeIndicatorContainer">
+          <div className="spacer" style={{width:`${(currentHour / 24) * 100}%`}}></div>
+          <div className="indicator"></div>
         </div>
     </div>;
 }

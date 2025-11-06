@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Container from 'react-bootstrap/Container';
+import Nav from 'react-bootstrap/Nav';
+import NavLink from 'react-bootstrap/NavLink';
 import Navbar from 'react-bootstrap/Navbar';
 import NavbarBrand from 'react-bootstrap/NavbarBrand';
 import "./globals.css";
@@ -18,6 +20,10 @@ export default function RootLayout({
         <Navbar bg="dark" data-bs-theme="dark">
           <Container>
             <NavbarBrand href="/">ACME Seld-M-Break HeatPump</NavbarBrand>
+            <Nav className="me-auto">
+              <NavLink href="/">Status</NavLink>
+              <NavLink href="/config">Config</NavLink>
+            </Nav>
           </Container>
         </Navbar>
         <Container>

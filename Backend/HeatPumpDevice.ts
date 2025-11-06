@@ -97,23 +97,31 @@ var thermostatEndpoint = await node.add(ThermostatDevice.with(HeatPumpThermostat
 });
 
 var currentHour = 0;
+var currentHeatingScheduleIndex = 0;
+var currentHotWaterScheduleIndex = 0;
 
 thermostatEndpoint.events.thermostat.systemMode$Changed.on(value => {
     var heatingOn = value === 4; // SystemMode 4 is heating
 
     console.log(`Thermostat is now ${heatingOn ? "ON" : "OFF"}`);
 
+    updateSystemToCurrentHour(currentHour);
     updateForecast();
     updateClients();
 });
 
 thermostatEndpoint.events.thermostat.occupiedHeatingSetpoint$Changed.on(value => {
-    console.log(`Heating setpoint is now ${value / 100}°C`);
+    console.log(`Heating setpoint is now ${value}°C`);
+
+    updateSystemToCurrentHour(currentHour);
     updateForecast();
     updateClients();
 });
 
 function updateForecast() {
+    // Divide the forecast by the heating schedule, with a slot dedicated to the hot water run.
+    //
+
 
 }
 
@@ -124,14 +132,17 @@ await node.start();
 var heatingSchedule = [
     {
         hour: 0,
+        endHour: 4,
         targetTemperature: 16
     },
     {
         hour: 5,
+        endHour: 19,
         targetTemperature: 21
     },
     {
         hour: 20,
+        endHour: 23,
         targetTemperature: 16
     },
 ];
@@ -139,14 +150,17 @@ var heatingSchedule = [
 var hotWaterSchedule = [
     {
         hour: 0,
+        endHour: 3,
         on: false
     },
     {
         hour: 4,
+        endHour: 4,
         on: true
     },
     {
         hour: 5,
+        endHour: 23,
         on: false
     },
 ];
@@ -166,16 +180,18 @@ const io = new Server(server, {
 app.get("/status", (request, response) => {
     const status = {
         status: "Running",
+        systemMode: thermostatEndpoint.state.thermostat.systemMode,
         currentHour,
-        systemMode, 
+        targetTemperature: thermostatEndpoint.state.thermostat.occupiedHeatingSetpoint / 100,
+        power: heatpumpEndpoint.state.electricalPowerMeasurement.activePower,
+        activeHeatingScheduleIndex: currentHeatingScheduleIndex,
+        activeHotWaterScheduleIndex: currentHotWaterScheduleIndex
     };
 
     response.send(status);
 });
 
 app.post("/currenthour", async (request, response) => {
-
-    console.log(request.body);
 
     await updateSystemToCurrentHour(request.body.currentHour);
 
@@ -260,31 +276,59 @@ const responseData = await response.json();
 
 const hourlyData = responseData.hourly;
 
-const temperatureByHour = hourlyData.time.map((t, i) => ({
-  time: t,
-  temperature: hourlyData.temperature_2m[i]
-}));
+const temperatureByHour = hourlyData.time.map((t, i) => 
+{
+    var time = new Date(t);
+
+    return {
+        hour: time.getHours(),
+        temperature: hourlyData.temperature_2m[i]
+    }
+});
 
 async function updateSystemToCurrentHour(hour) {
 
+    currentHour = hour;
+
+    // Check if the schedule has changed...
+    //
+    var matchingHeatingSchedule = heatingSchedule.find(hs => hs.hour <= hour && hs.endHour >= hour);
+
+    var matchingHeatingScheduleIndex = heatingSchedule.indexOf(matchingHeatingSchedule);
+
+    if(matchingHeatingScheduleIndex != currentHeatingScheduleIndex) {
+
+        currentHeatingScheduleIndex = matchingHeatingScheduleIndex;
+
+        var newTemperature =  matchingHeatingSchedule.targetTemperature * 100;
+
+        await thermostatEndpoint.setStateOf(ThermostatServer, {
+             occupiedHeatingSetpoint: newTemperature
+        });
+    }
+
+    var matchingHotWaterSchedule = hotWaterSchedule.find(hs => hs.hour <= hour && hs.endHour >= hour);
+
+    currentHotWaterScheduleIndex = hotWaterSchedule.indexOf(matchingHotWaterSchedule);
+
+    var outdoorTemperature = temperatureByHour.find(t => t.hour == hour).temperature;
+
+    var targetTemperature = thermostatEndpoint.state.thermostat.occupiedHeatingSetpoint / 100;
+
+    var deltaT = targetTemperature - outdoorTemperature;
+
+    var heatRequired = deltaT * 300;
+
+    if(matchingHeatingSchedule.on) {
+        heatRequired = 8000;
+    }
+
     var power: number = 0;
 
-    var outdoorTemperature = 5;//temperatureByHour.find(t => t.hour == hour).temperature;
-
-    // Using the schedule, determine the target temperature.
+    // We're heating or we need hot water. Either way, we're pulling power!
     //
-    var matchingSchedule = heatingSchedule.find(hs => hs.hour >= hour && hs.hour < hour);
-
-    console.log({matchingSchedule});
-
-    var targetTemperature = matchingSchedule?.temperature ?? 21;
-
-    await thermostatEndpoint.setStateOf(ThermostatServer, {
-        occupiedHeatingSetpoint: targetTemperature,
-    });
-
-    if (thermostatEndpoint.state.thermostat.systemMode === 4) {
-        power = predict([targetTemperature, outdoorTemperature]) * 1000; // mW;
+    if (thermostatEndpoint.state.thermostat.systemMode === 4 || matchingHotWaterSchedule.on) {
+        power = predict([heatRequired, outdoorTemperature]) * 1000; // mW;
     }
 
     var currentPower = Math.floor(power);
@@ -293,7 +337,7 @@ async function updateSystemToCurrentHour(hour) {
         activePower: currentPower,
     });
 
-    updateClients(systemMode, hour, targetTemperature, power);
+    updateClients();
 }
 
 function updateClients() {
@@ -301,39 +345,10 @@ function updateClients() {
         systemMode: thermostatEndpoint.state.thermostat.systemMode,
         currentHour,
         targetTemperature: thermostatEndpoint.state.thermostat.occupiedHeatingSetpoint / 100,
-        power: heatpumpEndpoint.state.electricalPowerMeasurement.activePower
+        power: heatpumpEndpoint.state.electricalPowerMeasurement.activePower,
+        activeHeatingScheduleIndex: currentHeatingScheduleIndex,
+        activeHotWaterScheduleIndex: currentHotWaterScheduleIndex
     });
 }
 
-// var timer = setInterval(async function () {
-
-//     var power: number = 0;
-
-//     var date = new Date();
-//     var hour = date.getHours();
-
-//     var outdoorTemperature = temperatureByHour[hour].temperature;
-//     //console.log("Outdoor temperature is:", outdoorTemperature);
-
-//     var targetTemperature = heatingSetpoint / 100;
-//     //console.log("Target temperature is:", targetTemperature);
-
-//     if (heatingOn) {
-//         power = predict([targetTemperature, outdoorTemperature]) * 1000; // mW;
-//     }
-
-//     power = Math.floor(power);
-
-//     //console.log("Setting power to:", power);
-
-//     await heatpumpEndpoint.setStateOf(ElectricalPowerMeasurementServer, {
-//         activePower: power,
-//     });
-
-// }, 1000);
-
-await node.start();
-
-//clearInterval(timer);
-
-//console.log("Exiting");
+await updateSystemToCurrentHour(0);

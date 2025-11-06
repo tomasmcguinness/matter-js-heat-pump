@@ -68,6 +68,18 @@ a {
     align-items: center;
 }
 
+.hourlyScheduleContainer .timeIndicatorContainer {
+  display: flex;
+}
+
+.hourlyScheduleContainer .timeIndicatorContainer .indicator {
+  width: 0; 
+  height: 0; 
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 5px solid red;
+}
+
 .card {
   margin-bottom: 20px;
 }

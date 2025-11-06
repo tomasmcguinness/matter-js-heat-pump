@@ -2,7 +2,7 @@
 
 import { Manager } from 'socket.io-client';
 import { useState, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine } from 'recharts';
 import { HourlySchedule } from './hourlySchedule.tsx';
 
 export default function Home() {
@@ -20,6 +20,8 @@ export default function Home() {
   const [currentHour, setCurrentHour] = useState<number>(0);
   const [currentPower, setCurrentPower] = useState<number>(0);
   const [targetTemperature, setTargetTemperature] = useState<number>(0);
+  const [activeHeatingScheduleIndex, setActiveHeatingScheduleIndex] = useState<number>(0);
+  const [activeHotWaterScheduleIndex, setActiveHotWaterScheduleIndex] = useState<number>(0);
 
   useEffect(() => {
     fetch('http://localhost:3000/currenthour', { method: "POST",
@@ -47,23 +49,26 @@ export default function Home() {
       }
     });
 
-    socket.on("systemModeChanged", (state) => {
-      console.log("systemMode: " + state);
-      setSystemMode(state);
-    });
-
     socket.on("systemUpdated", (state) => {
       console.log("systemUpdated: " + state);
       setSystemMode(state.systemMode);
-      setCurrentPower(state.currentPower);
+      setCurrentHour(state.currentHour);
+      setCurrentPower(Math.floor(state.power));
       setTargetTemperature(state.targetTemperature);
+      setActiveHeatingScheduleIndex(state.activeHeatingScheduleIndex);
+      setActiveHotWaterScheduleIndex(state.activeHotWaterScheduleIndex);
     });
 
   }, []);
 
    useEffect(() => {
-    fetch('http://localhost:3000/status').then(r => r.json()).then(data => { 
-      setSystemMode(data.systemMode); 
+    fetch('http://localhost:3000/status').then(r => r.json()).then(state => { 
+      setSystemMode(state.systemMode);
+      setCurrentHour(state.currentHour);
+      setCurrentPower(Math.floor(state.power));
+      setTargetTemperature(state.targetTemperature);
+      setActiveHeatingScheduleIndex(state.activeHeatingScheduleIndex);
+      setActiveHotWaterScheduleIndex(state.activeHotWaterScheduleIndex);
     });
   }, []);
 
@@ -105,11 +110,12 @@ export default function Home() {
     }}
   >
     <CartesianGrid strokeDasharray="3 3" />
-    <XAxis dataKey="time" />
+    <XAxis dataKey="hour" />
     <YAxis width="auto" />
     <Tooltip />
     <Legend />
     <Line type="monotone" dataKey="temperature" stroke="#8884d8" activeDot={{ r: 8 }} />
+    <ReferenceLine strokeDasharray="3 3" x={parseInt(currentHour)} stroke="red" />                 
   </LineChart>;
 
   var heatingSlots = [];
@@ -132,7 +138,7 @@ export default function Home() {
 
   return (
     <div>
-      <h1>28th November 2024</h1>
+      <h1>28th November 2024 - {currentHour}:00</h1>
       <hr />
       
       <div className="card">
@@ -150,11 +156,19 @@ export default function Home() {
       </>
     }
 
-    <h2 style={{display:'inline'}}><span className="badge bg-primary">{currentPower}W</span></h2>
+    <h2 style={{display:'inline'}}><span className="badge bg-primary">{Math.floor(currentPower/1000)}W</span></h2>
   </div>
 </div>
 
-<input type="range" style={{width: '100%', marginBottom: '20px'}} value={currentHour} min="0" max="24" onChange={handleChange} />
+<div className="card">
+  <div className="card-header">
+    Current Hour
+  </div>
+  <div className="card-body">
+<input type="range" style={{width: '100%'}} value={currentHour} min="0" max="23" onChange={handleChange} />
+
+  </div>
+</div>
 
       <div className="card">
   <div className="card-header">
@@ -170,7 +184,7 @@ export default function Home() {
     Heating Schedule
   </div>
   <div className="card-body">
-      <HourlySchedule transitions={heatingSlots} />
+      <HourlySchedule transitions={heatingSlots} activeIndex={activeHeatingScheduleIndex} currentHour={currentHour} />
   </div>
 </div>
 
@@ -179,7 +193,7 @@ export default function Home() {
     Hot Water Schedule
   </div>
   <div className="card-body">
-      <HourlySchedule transitions={hotWaterSlots} />
+      <HourlySchedule transitions={hotWaterSlots} activeIndex={activeHotWaterScheduleIndex} currentHour={currentHour} />
   </div>
 </div>
     </div>
