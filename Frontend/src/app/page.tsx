@@ -17,6 +17,18 @@ export default function Home() {
   const [hotWaterSchedule, setHotWaterSchedule] = useState<Transition[]>(null);
 
   const [systemMode, setSystemMode] = useState<number>(0);
+  const [currentHour, setCurrentHour] = useState<number>(0);
+  const [currentPower, setCurrentPower] = useState<number>(0);
+  const [targetTemperature, setTargetTemperature] = useState<number>(0);
+
+  useEffect(() => {
+    fetch('http://localhost:3000/currenthour', { method: "POST",
+      headers: {
+    "Content-Type": "application/json",
+  },
+       body: JSON.stringify({ currentHour })});
+    console.log(currentHour, '- Has changed')
+  },[currentHour]) /
 
   useEffect(() => {
 
@@ -38,6 +50,13 @@ export default function Home() {
     socket.on("systemModeChanged", (state) => {
       console.log("systemMode: " + state);
       setSystemMode(state);
+    });
+
+    socket.on("systemUpdated", (state) => {
+      console.log("systemUpdated: " + state);
+      setSystemMode(state.systemMode);
+      setCurrentPower(state.currentPower);
+      setTargetTemperature(state.targetTemperature);
     });
 
   }, []);
@@ -65,6 +84,14 @@ export default function Home() {
       setHotWaterSchedule(data); 
       setIsLoadingHotWaterSchedule(false); });
   }, []);
+
+  var turnOn =() => {
+    fetch('http://localhost:3000/on', { method: "POST" });
+  }
+
+  var turnOff =() => {
+    fetch('http://localhost:3000/off', { method: "POST" });
+  }
 
   var outdoorTemperatureChart = <LineChart
     style={{ width: '100%', maxWidth: '1200px', height: '100%', maxHeight: '40vh', aspectRatio: 1.618 }}
@@ -97,7 +124,11 @@ export default function Home() {
     hotWaterSlots = hotWaterSchedule.map((x) =>{ return { hour: x.hour, show: x.on }; });
   }
 
-  var systemModeLabel = systemMode == 0 ? <h2 style={{display:'inline'}}><span className="badge bg-danger">OFF</span></h2> : <h2 style={{display:'inline'}}><span className="badge bg-success">HEATING</span></h2>;
+  var systemModeLabel = systemMode == 0 ? <span className="badge bg-danger" onClick={turnOn}>OFF</span> : <span onClick={turnOff} className="badge bg-success">HEATING</span>;
+
+  var handleChange = (event) => {
+    setCurrentHour(event.target.value);
+  };
 
   return (
     <div>
@@ -109,18 +140,21 @@ export default function Home() {
     Status
   </div>
   <div className="card-body">
+    <h2 style={{display:'inline', cursor: 'pointer'}}>
     {systemModeLabel}
+    </h2>
 
     {systemMode == 4 && <>
-      <h2 style={{display:'inline'}}><span className="badge bg-primary">Target: 21°C</span></h2>
-      <h2 style={{display:'inline'}}><span className="badge bg-primary">Flow Temperature: 33°C</span></h2>
-      <h2 style={{display:'inline'}}><span className="badge bg-primary">Power: 100W°C</span></h2>
+      <h2 style={{display:'inline'}}><span className="badge bg-primary">Target: {targetTemperature}°C</span></h2>
+      {/* <h2 style={{display:'inline'}}><span className="badge bg-primary">Flow Temperature: 33°C</span></h2> */}
       </>
     }
+
+    <h2 style={{display:'inline'}}><span className="badge bg-primary">{currentPower}W</span></h2>
   </div>
 </div>
 
-<input type="range" style={{width: '100%', marginBottom: '20px'}} value={0} min={0} max={24} />
+<input type="range" style={{width: '100%', marginBottom: '20px'}} value={currentHour} min="0" max="24" onChange={handleChange} />
 
       <div className="card">
   <div className="card-header">
