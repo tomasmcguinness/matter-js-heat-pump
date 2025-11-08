@@ -1,7 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-
 export default function Config() {
 
 return (<div>
@@ -14,12 +12,12 @@ return (<div>
   <div className="card-body">
     <form>
       <div className="input-group mb-3">
-        <input type="email" className="form-control" id="exampleInputEmail1" aria-describedby="emailHelp"  />
-        <span class="input-group-text" id="basic-addon2">°C</span>
+        <input type="email" className="form-control" id="exampleInputEmail1" placeholder="Enter the design temperature e.g. -3"  />
+        <span className="input-group-text" id="basic-addon2">°C</span>
       </div>
       <div className="input-group mb-3">
-        <input type="email" className="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" />
-        <span class="input-group-text" id="basic-addon2">kW</span>
+        <input type="email" className="form-control" id="exampleInputEmail1" placeholder="Enter the heat loss in kW e.g 5" />
+        <span className="input-group-text" id="basic-addon2">kW</span>
       </div>
     </form>
   </div>
@@ -32,11 +30,11 @@ return (<div>
   <div className="card-body">
      <form>
       <div className="input-group mb-3">
-        <input type="email" className="form-control" id="exampleInputEmail1" aria-describedby="emailHelp"  />
-        <span class="input-group-text" id="basic-addon2">°C</span>
+        <input type="text" className="form-control" id="offset" placeholder="Enter the weather curve offset e.g. 35" />
+        <span className="input-group-text" id="offset">°C</span>
       </div>
       <div className="input-group mb-3">
-        <input type="email" className="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" />
+        <input type="number" className="form-control" placeholder="Enter the weather curve slope e.g. 0.5" />
       </div>
     </form>
   </div>

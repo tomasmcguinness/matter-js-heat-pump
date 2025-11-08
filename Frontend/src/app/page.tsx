@@ -99,7 +99,7 @@ export default function Home() {
   }
 
   var outdoorTemperatureChart = <LineChart
-    style={{ width: '100%', maxWidth: '1200px', height: '100%', maxHeight: '40vh', aspectRatio: 1.618 }}
+    style={{ width: '100%', maxWidth: '1200px', height: '100%', maxHeight: '30vh', aspectRatio: 1.618 }}
     responsive
     data={outdoorTemperatures}
     margin={{

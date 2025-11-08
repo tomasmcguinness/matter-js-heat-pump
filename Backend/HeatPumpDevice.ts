@@ -319,16 +319,23 @@ async function updateSystemToCurrentHour(hour) {
 
     var heatRequired = deltaT * 200;
 
-    if(matchingHeatingSchedule.on) {
+    var weatherCurveOffset = 35;
+    var weatherCurveSlope = 0.5;
+    var deltaT = 5;
+
+    var flowTemperature = (outdoorTemperature * weatherCurveSlope) + weatherCurveOffset;
+    var flowRate = heatRequired / (4.186 * deltaT); // in liters per second
+
+    if(matchingHotWaterSchedule.on) {
         heatRequired = 5000;
     }
 
     var power: number = 0;
 
-    // We're heating or we need hot water. Either way, we're pulling power!
+    // If we're heating the house or the hot water, we're pulling power!
     //
     if (thermostatEndpoint.state.thermostat.systemMode === 4 || matchingHotWaterSchedule.on) {
-        power = predict([heatRequired, outdoorTemperature]) * 1000; // mW;
+        power = predict([flowTemperature, flowRate, outdoorTemperature]) * 1000; // mW;
     }
 
     var currentPower = Math.floor(power);
