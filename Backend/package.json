@@ -10,8 +10,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@matter/main": "^0.15.3",
-    "@project-chip/matter.js": "^0.15.1",
+    "@matter/main": "^0.15.6",
+    "@project-chip/matter.js": "^0.15.6",
     "@project-chip/matter.js-tools": "^0.10.7",
     "@tensorflow/tfjs": "^4.22.0",
     "@tensorflow/tfjs-vis": "^1.5.1",

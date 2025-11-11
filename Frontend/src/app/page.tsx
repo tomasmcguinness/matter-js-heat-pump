@@ -118,7 +118,7 @@ export default function Home() {
     <ReferenceLine strokeDasharray="3 3" x={parseInt(currentHour)} stroke="red" />                 
   </LineChart>;
 
-  var heatingSlots = [];
+  var heatingSlots: [] = [];
   
   if(!isLoadingHeatingSchedule) {
     heatingSlots = heatingSchedule.map((x) =>{ return { hour: x.hour, temperature: x.targetTemperature, show: true }; });

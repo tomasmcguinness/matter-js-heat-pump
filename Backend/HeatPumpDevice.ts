@@ -4,7 +4,7 @@ import { Server } from "socket.io";
 import cors from "cors";
 import { ServerNode, Logger } from "@matter/main";
 import { MeasurementType } from "@matter/main/types";
-import { PowerSourceNs } from "@matter/model";
+import { EndpointModel, PowerSourceNs } from "@matter/model";
 import { HeatPumpDevice } from "@matter/main/devices/heat-pump";
 import { ThermostatDevice } from "@matter/main/devices/thermostat";
 import { HeatPumpDeviceLogic } from "./HeatPumpDeviceLogic.ts";
@@ -16,6 +16,7 @@ import { ElectricalPowerMeasurementServer } from "@matter/main/behaviors/electri
 import { ElectricalEnergyMeasurementServer } from "@matter/main/behaviors/electrical-energy-measurement";
 import { ThermostatServer } from "@matter/main/behaviors/thermostat";
 import fs from "fs";
+import { start } from "repl";
 
 const logger = Logger.get("ComposedDeviceNode");
 
@@ -36,7 +37,7 @@ var heatpumpEndpoint = await node.add(HeatPumpDevice.with(HeatPumpDeviceLogic,
     PowerTopologyServer,
     ElectricalPowerMeasurementServer,
     ElectricalEnergyMeasurementServer,
-    DeviceEnergyManagementServer), {
+    DeviceEnergyManagementServer.with("PowerForecastReporting")), {
     id: "heat-pump",
     // heatPump: {
     //     tagList: [PowerSourceNs.Grid],
@@ -79,9 +80,6 @@ var heatpumpEndpoint = await node.add(HeatPumpDevice.with(HeatPumpDeviceLogic,
                 percentMax: 100
             }],
         }
-    },
-    deviceEnergyManagement: {
-        featureMap: { powerAdjustment: true, powerForecastReporting: true},
     }
 });
 
@@ -100,29 +98,78 @@ var currentHour = 0;
 var currentHeatingScheduleIndex = 0;
 var currentHotWaterScheduleIndex = 0;
 
-thermostatEndpoint.events.thermostat.systemMode$Changed.on(value => {
+thermostatEndpoint.events.thermostat.systemMode$Changed.on(async value => {
     var heatingOn = value === 4; // SystemMode 4 is heating
 
     console.log(`Thermostat is now ${heatingOn ? "ON" : "OFF"}`);
 
     updateSystemToCurrentHour(currentHour);
-    updateForecast();
+    await updateForecast();
     updateClients();
 });
 
-thermostatEndpoint.events.thermostat.occupiedHeatingSetpoint$Changed.on(value => {
+thermostatEndpoint.events.thermostat.occupiedHeatingSetpoint$Changed.on(async value => {
     console.log(`Heating setpoint is now ${value}°C`);
-
     updateSystemToCurrentHour(currentHour);
-    updateForecast();
-    updateClients();
 });
 
-function updateForecast() {
-    // Divide the forecast by the heating schedule, with a slot dedicated to the hot water run.
+async function updateForecast() {
+    
+    // To start, one slot for the whole day.
     //
+    var slots = [];
 
+    var minPower = 0;
+    var maxPower = 0;
+    var meanPower = 0;
 
+    for (let hour = 0; hour < 24; hour++) {
+
+        var matchingHeatingSchedule = heatingSchedule.find(hs => hs.hour <= hour && hs.endHour >= hour);
+
+        var outdoorTemperature = temperatureByHour.find(t => t.hour == hour).temperature;
+
+        var deltaT = matchingHeatingSchedule?.targetTemperature - outdoorTemperature;
+
+        var heatRequired = deltaT * 200;
+
+        var weatherCurveOffset = 35;
+        var weatherCurveSlope = 0.5;
+        var deltaT = 5;
+
+        var flowTemperature = (outdoorTemperature * weatherCurveSlope) + weatherCurveOffset;
+        var flowRate = heatRequired / (4.186 * deltaT); // in liters per second
+
+        var power = predict([flowTemperature, flowRate, outdoorTemperature]) * 1000; // mW;
+
+        slots.push(power);
+    }
+
+    var averagePower = slots.reduce((a, b) => a + b, 0) / slots.length;
+
+    console.log('Generating a power forecast with average power:', Math.floor(averagePower), 'mW');
+
+    await heatpumpEndpoint.setStateOf(DeviceEnergyManagementServer, {
+        forecast: {
+            forecastId: 1,
+            activeSlotNumber: 0,
+            startTime: 1,
+            endTime: 111111111111,
+            isPausable: false,
+            slots: [{
+                minDuration: 1440,
+                maxDuration: 1440,
+                defaultDuration: 1440,
+                elapsedSlotTime: 0,
+                remainingSlotTime: 1440,
+                nominalPower: 9000000,
+                minPower: 0,
+                maxPower: 10000000,
+                nominalEnergy: 10000,
+            }],
+            forecastUpdateReason: 0
+        }
+    });
 }
 
 logger.info(node);
@@ -177,7 +224,7 @@ const io = new Server(server, {
     }
 });
 
-app.get("/status", (request, response) => {
+app.get("/status", (_, response) => {
     const status = {
         status: "Running",
         systemMode: thermostatEndpoint.state.thermostat.systemMode,
@@ -276,8 +323,7 @@ const responseData = await response.json();
 
 const hourlyData = responseData.hourly;
 
-const temperatureByHour = hourlyData.time.map((t, i) => 
-{
+const temperatureByHour = hourlyData.time.map((t, i) => {
     var time = new Date(t);
 
     return {
@@ -286,7 +332,7 @@ const temperatureByHour = hourlyData.time.map((t, i) =>
     }
 });
 
-async function updateSystemToCurrentHour(hour) {
+async function updateSystemToCurrentHour(hour: number) {
 
     currentHour = hour;
 
@@ -296,14 +342,14 @@ async function updateSystemToCurrentHour(hour) {
 
     var matchingHeatingScheduleIndex = heatingSchedule.indexOf(matchingHeatingSchedule);
 
-    if(matchingHeatingScheduleIndex != currentHeatingScheduleIndex) {
+    if (matchingHeatingScheduleIndex != currentHeatingScheduleIndex) {
 
         currentHeatingScheduleIndex = matchingHeatingScheduleIndex;
 
-        var newTemperature =  matchingHeatingSchedule.targetTemperature * 100;
+        var newTemperature = matchingHeatingSchedule.targetTemperature * 100;
 
         await thermostatEndpoint.setStateOf(ThermostatServer, {
-             occupiedHeatingSetpoint: newTemperature
+            occupiedHeatingSetpoint: newTemperature
         });
     }
 
@@ -326,7 +372,7 @@ async function updateSystemToCurrentHour(hour) {
     var flowTemperature = (outdoorTemperature * weatherCurveSlope) + weatherCurveOffset;
     var flowRate = heatRequired / (4.186 * deltaT); // in liters per second
 
-    if(matchingHotWaterSchedule.on) {
+    if (matchingHotWaterSchedule.on) {
         heatRequired = 5000;
     }
 
@@ -344,6 +390,7 @@ async function updateSystemToCurrentHour(hour) {
         activePower: currentPower,
     });
 
+    await updateForecast();
     updateClients();
 }
 
