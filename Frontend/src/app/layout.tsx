@@ -22,7 +22,7 @@ export default function RootLayout({
             <NavbarBrand href="/">ACME Seld-M-Break HeatPump</NavbarBrand>
             <Nav className="me-auto">
               <NavLink href="/">Status</NavLink>
-              <NavLink href="/config">Config</NavLink>
+              {/* <NavLink href="/config">Config</NavLink> */}
             </Nav>
           </Container>
         </Navbar>
