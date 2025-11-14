@@ -16,6 +16,7 @@ import { ElectricalPowerMeasurementServer } from "@matter/main/behaviors/electri
 import { ElectricalEnergyMeasurementServer } from "@matter/main/behaviors/electrical-energy-measurement";
 import { TemperatureMeasurementServer } from "@matter/main/behaviors/temperature-measurement";
 import { ThermostatServer } from "@matter/main/behaviors/thermostat";
+import { WiredCurrentType } from "@matter/main/clusters/power-source";
 import fs from "fs";
 
 const logger = Logger.get("ComposedDeviceNode");
@@ -46,7 +47,7 @@ var heatpumpEndpoint = await node.add(HeatPumpDevice.with(HeatPumpDeviceLogic,
         status: 1,
         order: 1,
         description: "Grid",
-        wiredCurrentType: 0, // Alternating Current TODO Get this enum from the types.
+        wiredCurrentType: WiredCurrentType.Ac, // Alternating Current TODO Get this enum from the types.
     },
     electricalPowerMeasurement: {
         powerMode: 2,
