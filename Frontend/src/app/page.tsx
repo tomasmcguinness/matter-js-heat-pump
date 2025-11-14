@@ -20,19 +20,9 @@ export default function Home() {
   const [currentHour, setCurrentHour] = useState<number>(0);
   const [currentPower, setCurrentPower] = useState<number>(0);
   const [targetTemperature, setTargetTemperature] = useState<number>(0);
+  const [flowTemperature, setFlowTemperature] = useState<number>(0);
   const [activeHeatingScheduleIndex, setActiveHeatingScheduleIndex] = useState<number>(0);
   const [activeHotWaterScheduleIndex, setActiveHotWaterScheduleIndex] = useState<number>(0);
-
-  useEffect(() => {
-    fetch('http://localhost:3000/currenthour', {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ currentHour })
-    });
-    console.log(currentHour, '- Has changed')
-  }, [currentHour]) /
 
     useEffect(() => {
 
@@ -57,6 +47,7 @@ export default function Home() {
         setCurrentHour(state.currentHour);
         setCurrentPower(Math.floor(state.power));
         setTargetTemperature(state.targetTemperature);
+        setFlowTemperature(state.flowTemperature);
         setActiveHeatingScheduleIndex(state.activeHeatingScheduleIndex);
         setActiveHotWaterScheduleIndex(state.activeHotWaterScheduleIndex);
       });
@@ -155,21 +146,25 @@ export default function Home() {
             {systemModeLabel}
           </h2>
 
-          {systemMode == 4 && <h2 style={{ display: 'inline' }}><span className="badge bg-primary">Target: {targetTemperature}°C</span></h2>}
+          {systemMode == 4 && 
+            <>
+              <h2 style={{ display: 'inline' }}><span className="badge bg-primary">Target: {targetTemperature}°C</span></h2>
+              <h2 style={{ display: 'inline' }}><span className="badge bg-primary">Flow: {flowTemperature}°C</span></h2>
+            </>
+          }
 
           <h2 style={{ display: 'inline' }}><span className="badge bg-primary">{Math.floor(currentPower / 1000)}W</span></h2>
         </div>
       </div>
 
-      <div className="card">
+      {/* <div className="card">
         <div className="card-header">
           Current Hour
         </div>
         <div className="card-body">
           <input type="range" style={{ width: '100%' }} value={currentHour} min="0" max="23" onChange={handleChange} />
-
         </div>
-      </div>
+      </div> */}
 
       <div className="card">
         <div className="card-header">
@@ -184,7 +179,7 @@ export default function Home() {
         <div className="card-header">
           Heating Schedule
         </div>
-        <div className="card-body" style={{paddingLeft:'35px'}}>
+        <div className="card-body">
           <HourlySchedule transitions={heatingSlots} activeIndex={activeHeatingScheduleIndex} currentHour={currentHour} />
         </div>
       </div>

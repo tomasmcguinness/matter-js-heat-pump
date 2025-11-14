@@ -5,19 +5,19 @@ export default function Config() {
 return (<div>
    <h1>Configuration</h1>
    <hr />
-{/* <div className="card">
-  <div className="card-header">
-    Device Energy Management
-  </div>
-  <div className="card-body">
-    <form>
-      <div className="input-group mb-3">
-        <input type="email" className="form-control" id="exampleInputEmail1" placeholder="Enter the heat loss in kW e.g 5" />
-        <span className="input-group-text" id="basic-addon2">kW</span>
-      </div>
-    </form>
-  </div>
-</div> */}
+  {/* <div className="card">
+    <div className="card-header">
+      Device Energy Management
+    </div>
+    <div className="card-body">
+      <form>
+        <div className="input-group mb-3">
+          <input type="email" className="form-control" id="exampleInputEmail1" placeholder="Enter the heat loss in kW e.g 5" />
+          <span className="input-group-text" id="basic-addon2">kW</span>
+        </div>
+      </form>
+    </div>
+  </div> */}
 {/* Heat Loss Section 
 <div className="card">
   <div className="card-header">
