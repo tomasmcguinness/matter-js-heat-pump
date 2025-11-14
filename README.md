@@ -31,19 +31,15 @@ Once you open the application, you should see something like this
 
 I don't know of any commissioner that supports the Heat Pump, outside of `chip-tool`. Most will render the thermostat, so you can use that to play with the controls.
 
-The weather forecast is fixed to a date in the past that had a nice variation. The heat loss is set to 5kW with a design temp of -3. Weather curve offset is 35 with a slope of 0.5.
+The weather forecast is fixed to a date in the past that had a nice cold spell.
 
-If you click OFF/HEATING, it will toggle the heat pump on/off (hot water should still happen!)
-
-You can slide the "Current Time" bar to see the values changes.
+If you click OFF/HEATING, it will toggle the heat pump on/off
 
 Using the iOS App or the Aqara app, you can adjust the set temperature or change the mode. The Aqara app will also show you power consumption!
 
 # Next Up
 
-Saving configuration for heat loss and weather curve.
-Show calculated flow temp and flow rates.
-Generate a power forecast for my Energy Manager (https://github.com/tomasmcguinness/matter-js-energy-manager)
+Better calculation of the heat pump's power consumption and flow temperature
 Implementing heating schedule in Matter (the SDK doesn't support this yet).
 
 ## Known problems
