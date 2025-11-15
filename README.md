@@ -12,6 +12,7 @@ To run this, you'll need to start both the backend.
 For the backend
 ```
 cd Backend
+npm install
 node HeatPumpDevice.js
 ```
 
@@ -19,6 +20,7 @@ For the frontend
 
 ```
 cd Frontend
+npm install
 npm run dev
 ```
 
